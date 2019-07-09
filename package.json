@@ -1,0 +1,19 @@
+{
+  "name": "kowtow",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "devDependencies": {
+    "tap-spec": "^5.0.0",
+    "tape": "^4.11.0"
+  },
+  "scripts": {
+    "test": "node test/ | tap-spec"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {}
+}
