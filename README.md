@@ -2,7 +2,9 @@
 
 A shadow-on-write view on a reference tree.
 
-### module explorations
+### analysis of existing modules
 
-- `immer`, doesnt allow late modifications of original
-- `muta`, doesnt support classes
+
+- [`es-membrane`](https://github.com/ajvincent/es-membrane) ooo neat, lets investigate
+- [`muta`](https://github.com/mappum/muta), doesnt support classes
+- [`immer`](https://github.com/immerjs/immer), doesnt allow late modifications of original
