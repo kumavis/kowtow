@@ -27,11 +27,11 @@ function createCopyFactory() {
     // const readOnlyProps = Object.getOwnPropertyDescriptors(target).map(propIsReadOnly)
     //
 
-    // we set the Proxy's target to a false target to avoid enforcing some invariants
+    // we set the Proxy's target to a false target for easier enforcing of some invariants
     // e.g.: Proxy invariant #1
     // https://www.ecma-international.org/ecma-262/8.0/#sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver
     // TypeError: 'get' on proxy: property 'prototype' is a read-only and non-configurable data property on the proxy target but the proxy did not return its actual value (expected '#<Original>' but got '[object Object]')
-    const falseTarget = typeof target === 'function' ? function(){} : {}
+    const proxyTarget = typeof target === 'function' ? function(){} : {}
     const proxyHandlers = {
       get (_, key) {
         const keyString = String(key)
@@ -47,6 +47,7 @@ function createCopyFactory() {
       set (_, key, value, receiver) {
         console.warn('$$$ set', debugLabel, key, !!receiver)
         
+        // check property descriptors for setter
         const targetPropDesc = proxyHandlers.getOwnPropertyDescriptor(_, key)
         if (targetPropDesc) {
           console.warn('~~~ target has prop desc')
@@ -56,7 +57,7 @@ function createCopyFactory() {
         }
         if (targetPropDesc && targetPropDesc.set) {
           const setter = targetPropDesc.set
-          setter.call(receiver, value)
+          return setter.call(receiver, value)
         }
 
         if (!receiver) console.warn('~~~~ no receiver')
@@ -75,9 +76,6 @@ function createCopyFactory() {
         const receiverProxy = receiver
         const receiverWrites = proxyToShadows.get(receiverProxy).writes
 
-        // if (receiver && !wrapper) console.warn('~~~~ no wrapper for receiver')
-
-        // TODO respect setters
         receiverWrites.set(key, {
           value,
           writable: true,
@@ -117,8 +115,25 @@ function createCopyFactory() {
         if (writes.has(key)) return writes.get(key)
         // look up on target and copy value
         const propDesc = Reflect.getOwnPropertyDescriptor(target, key)
-        if (propDesc && 'value' in propDesc) {
+  
+        // if no property found, return
+        if (!propDesc) return
+
+        // wrap value
+        if ('value' in propDesc) {
           propDesc.value = createCopy(propDesc.value, `${debugLabel}.${keyString}`)
+        }
+
+        // enforce proxy invariant
+        // ensure proxy target has non-configurable property
+        if (!propDesc.configurable) {
+          const proxyTargetPropDesc = Reflect.getOwnPropertyDescriptor(proxyTarget)
+          const proxyTargetPropIsConfigurable = (!proxyTargetPropDesc || proxyTargetPropDesc.configurable)
+          console.warn('@@ getOwnPropertyDescriptor - non configurable', String(key), !!proxyTargetPropIsConfigurable)
+          // if proxy target is configurable (and real target is not) update the proxy target to ensure the invariant holds
+          if (proxyTargetPropIsConfigurable) {
+            Reflect.defineProperty(proxyTarget, key, propDesc)
+          }
         }
         return propDesc
       },
@@ -179,7 +194,7 @@ function createCopyFactory() {
         return inst
       },
     }
-    const proxy = new Proxy(falseTarget, proxyHandlers)
+    const proxy = new Proxy(proxyTarget, proxyHandlers)
     const shadows = { writes, deletes }
     // record proxy replacing target
     originalToProxy.set(target, proxy)

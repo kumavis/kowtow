@@ -6,7 +6,7 @@ function test (label, testFn) {
     try {
       testFn(t)
     } catch (err) {
-      t.fail(err)
+      t.fail(err.stack)
       t.end()
     }
   })
@@ -232,6 +232,31 @@ test('propertyDescriptors - setter on original', (t) => {
 
   t.equal(orig.abc, undefined, 'orig unmodified')
   t.equal(copy.abc, 123, 'copy correctly modified')
+  t.notEqual(copy.xyz, 999, 'setter intercepted setting value')
+
+  t.end()
+})
+
+test('propertyDescriptors - non configurable property', (t) => {
+  const orig = {}
+  const copy = createCopy(orig)
+
+  Object.defineProperty(orig, 'abc', {
+    value: 123,
+    configurable: false,
+  })
+
+  t.equal(orig.abc, 123, 'orig correct start state')
+  t.equal(copy.abc, 123, 'copy correct start state')
+
+  let getOwnPropertyDescriptorError
+  try {
+    const propDesc = Object.getOwnPropertyDescriptor(copy, 'abc')
+  } catch (err) {
+    getOwnPropertyDescriptorError = err
+  }
+
+  t.notOk(getOwnPropertyDescriptorError, 'should not throw error on prop lookup')
 
   t.end()
 })
