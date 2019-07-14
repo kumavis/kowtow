@@ -1,5 +1,16 @@
-const test = require('tape')
+const tape = require('tape')
 const createCopy = require('../src/index')
+
+function test (label, testFn) {
+  tape(label, (t) => {
+    try {
+      testFn(t)
+    } catch (err) {
+      t.fail(err)
+      t.end()
+    }
+  })
+}
 
 test('basic - plain values', (t) => {
   t.equal(createCopy(null), null, 'copy of null')
@@ -165,7 +176,29 @@ test('propertyDescriptors - getter on original', (t) => {
   t.end()
 })
 
+test('propertyDescriptors - getter that re-defines itself on original', (t) => {
+  const orig = {}
+  const copy = createCopy(orig)
 
+  Object.defineProperty(orig, 'xyz', {
+    get () {
+      Object.defineProperty(orig, 'xyz', {
+        value: 2,
+      })
+      return 1
+    },
+    configurable: true
+  })
+
+  t.equal('xyz' in orig, true, 'orig has xyz')
+  t.equal('xyz' in copy, true, 'copy has xyz')
+
+  t.equal(copy.xyz, 1, 'returned first static value')
+  t.equal(copy.xyz, 2, 'returned second static value')
+  t.equal(copy.xyz, 2, 'returned second static value again')
+
+  t.end()
+})
 
 test('prototype - sanity checks', (t) => {
   const copy = createCopy({})
