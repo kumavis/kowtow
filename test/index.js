@@ -70,6 +70,41 @@ test('basic - method this', (t) => {
   t.end()
 })
 
+test('basic - method return wrapped', (t) => {
+  const orig = {
+    child: {},
+    abc: function () { return this },
+    xyz: function () { return this.child },
+  }
+  const copy = createCopyFactory()(orig)
+
+  t.equal(copy.abc(), copy, 'copy returns self without additional wrapper')
+  t.equal(copy.xyz(), copy.child, 'copy returns wrapped child')
+
+  t.end()
+})
+
+test('basic - function return wrapped self', (t) => {
+  const orig = function () { return orig } 
+  const copy = createCopyFactory()(orig)
+
+  t.equal(copy(), copy, 'copy returns self without additional wrapper')
+  
+  t.end()
+})
+
+test('basic - function return wrapped obj', (t) => {
+  const createCopy = createCopyFactory()
+  const child = {}
+  const orig = function () { return child } 
+  const copy = createCopy(orig)
+
+  t.notEqual(copy(), child, 'copy does not return unwrapped obj')
+  t.equal(copy(), createCopy(child), 'copy returns clone of child')
+  
+  t.end()
+})
+
 test('basic - delete and "in" keyword', (t) => {
   const orig = {}
   const copy = createCopyFactory()(orig)

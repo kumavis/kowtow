@@ -9,12 +9,16 @@ function createCopyFactory() {
   return createCopy
   
   function createCopy (target, debugLabel = '<root>') {
-    // return original target if copy is not possible
+    // return original target if proxy is not possible
     if (!shouldCopy(target)) return target
-    // reuse existing copies
+    // reuse existing proxies
     if (originalToProxy.has(target)) {
-      // console.warn(`*** copy reused ${debugLabel}`)
+      // console.warn(`*** proxy reused ${debugLabel}`)
       return originalToProxy.get(target)
+    }
+    // return as is if already a proxy
+    if (proxyToShadows.has(target)) {
+      return target
     }
     // prepare a proxy
     const writes = new Map()
@@ -22,7 +26,7 @@ function createCopyFactory() {
 
     global.copyCount = global.copyCount || 0
     global.copyCount++
-    // console.warn(`+++ copy new #${global.copyCount} - ${debugLabel}`)
+    // console.warn(`+++ proxy new #${global.copyCount} - ${debugLabel}`)
 
     // const readOnlyProps = Object.getOwnPropertyDescriptors(target).map(propIsReadOnly)
     //
@@ -180,7 +184,8 @@ function createCopyFactory() {
       },
       apply (_, thisArg, argumentsList) {
         // console.warn('$$$ apply', debugLabel)
-        return Reflect.apply(target, thisArg, argumentsList)
+        const result = Reflect.apply(target, thisArg, argumentsList)
+        return createCopy(result, `${debugLabel}.<apply>`) 
       },
       construct (_, args, thisArg) {
         // console.warn('$$$ construct', debugLabel, thisArg)
