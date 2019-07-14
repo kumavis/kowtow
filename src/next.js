@@ -4,6 +4,8 @@ module.exports = createCopyFactory
 
 function createCopyFactory() {
   const originalToProxy = new WeakMap()
+  const proxyToShadows = new WeakMap()
+
   return createCopy
   
   function createCopy (target, debugLabel = '<root>') {
@@ -42,9 +44,29 @@ function createCopyFactory() {
         const value = Reflect.get(target, key)
         return createCopy(value, `${debugLabel}.${keyString}`)
       },
-      set (_, key, value) {
-        console.warn('$$$ set', debugLabel, key)
-        writes.set(key, {
+      set (_, key, value, receiver) {
+        console.warn('$$$ set', debugLabel, key, !!receiver)
+        
+        if (!receiver) console.warn('~~~~ no receiver')
+        if (proxyToShadows.has(receiver)) {
+          console.warn('~~~ receiver is proxy')
+        } else {
+          console.warn('~~~ receiver is NOT proxy')
+          if (originalToProxy.has(receiver)) {
+            console.warn('~~~ receiver has proxy')
+          } else {
+            console.warn('~~~ receiver does NOT have proxy')
+          }
+          return Reflect.set(target, key, value, receiver)
+        }
+
+        const receiverProxy = receiver
+        const receiverWrites = proxyToShadows.get(receiverProxy).writes
+
+        // if (receiver && !wrapper) console.warn('~~~~ no wrapper for receiver')
+
+        // TODO respect setters
+        receiverWrites.set(key, {
           value,
           writable: true,
           enumerable: true,
@@ -146,8 +168,11 @@ function createCopyFactory() {
       },
     }
     const proxy = new Proxy(falseTarget, proxyHandlers)
+    const shadows = { writes, deletes }
     // record proxy replacing target
     originalToProxy.set(target, proxy)
+    proxyToShadows.set(proxy, shadows)
+    // return proxy
     return proxy
   }
 }

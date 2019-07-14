@@ -177,7 +177,10 @@ test('prototype - sanity checks', (t) => {
 })
 
 test('class - function class', (t) => {
-  function Orig () { this.b = 123 }
+  function Orig () {
+    this.b = 123
+    console.log('ctor', this.constructor.name)
+  }
   Orig.prototype.a = function () { this.b = 456 }
   
   const Copy = createCopy(Orig)
@@ -187,8 +190,18 @@ test('class - function class', (t) => {
   Child.prototype = Object.create(Copy.prototype)
 
   const orig = new Orig()
+  console.warn('copy inst start')
   const copy = new Copy()
+  console.warn('copy inst end')
   const child = new Child()
+
+  console.warn('orig props', Object.getOwnPropertyDescriptors(orig))
+  console.warn('copy props', Object.getOwnPropertyDescriptors(copy))
+  console.warn('child props', Object.getOwnPropertyDescriptors(child))
+
+  t.equal(orig.b, 123, 'orig should have expected start state')
+  t.equal(copy.b, 123, 'copy should have expected start state')
+  t.equal(child.b, 123, 'child should have expected start state')
 
   t.equal(child.b, 123, 'child should have same start state as Orig')
   child.a()
