@@ -165,6 +165,31 @@ test('basic - circ refs', (t) => {
   t.end()
 })
 
+test('createCopyFactory - identity in spaces', (t) => {
+  const createCopyA = createCopyFactory()
+
+  const orig = {}
+  orig.self = orig
+  const copy = createCopyA(orig)
+
+  t.notEqual(orig, copy)
+
+  t.equal(orig.self, orig)
+  t.equal(copy.self, copy)
+
+  t.equal(createCopyA(orig), createCopyA(orig))
+  t.equal(createCopyA(orig), copy)
+  t.equal(createCopyA(copy), copy)
+
+  const createCopyB = createCopyFactory()
+
+  t.notEqual(createCopyA(orig), createCopyB(orig))
+  t.notEqual(createCopyB(orig), copy)
+  t.notEqual(createCopyB(copy), copy)
+
+  t.end()
+})
+
 test('propertyDescriptors - getOwnPropertyDescriptor', (t) => {
   const orig = { child: {} }
   const copy = createCopyFactory()(orig)
@@ -442,6 +467,31 @@ test('class - class syntax subclass', (t) => {
   t.equal(Orig.prototype.xyz, undefined, 'doesnt modify original prototype')
   t.equal(Copy.prototype.xyz, undefined, 'doesnt modify copy prototype')
   t.equal(inst.xyz, 456, 'modifying new does affect instance')
+
+  t.end()
+})
+
+test('class - class syntax subclass readme example', (t) => {
+  // base class
+  class A {
+    abc () { return 123 }
+    xyz () { return 456 }
+  }
+  // copy of base class with shadowed prototype
+  const B = createCopyFactory()(A)
+  B.prototype.abc = function () { return this.xyz() }
+  // child class
+  class C extends B {
+    xyz () { return 789 }
+  }
+
+  const a = new A()
+  const b = new B()
+  const c = new C()
+
+  t.equal(a.abc(), 123)
+  t.equal(b.abc(), 456)
+  t.equal(c.abc(), 789)
 
   t.end()
 })
