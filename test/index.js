@@ -1,5 +1,5 @@
 const tape = require('tape')
-const createCopy = require('../src/index')
+const createCopyFactory = require('../src/index')
 
 function test (label, testFn) {
   tape(label, (t) => {
@@ -13,6 +13,7 @@ function test (label, testFn) {
 }
 
 test('basic - plain values', (t) => {
+  const createCopy = createCopyFactory()
   t.equal(createCopy(null), null, 'copy of null')
   t.equal(createCopy(undefined), undefined, 'copy of undefined')
   t.equal(createCopy(1), 1, 'copy of number')
@@ -22,7 +23,7 @@ test('basic - plain values', (t) => {
 
 test('basic - get and set', (t) => {
   const orig = {}
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   // copy doesnt affect orig
   t.equal(orig.xyz, undefined, 'orig doesnt have xyz property')
@@ -41,7 +42,7 @@ test('basic - get and set', (t) => {
 
 test('basic - deep set', (t) => {
   const orig = { child: {} }
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   copy.child.abc = 123
 
@@ -56,7 +57,7 @@ test('basic - deep set', (t) => {
 
 test('basic - method this', (t) => {
   const orig = { xyz: function () { this.value = 123 } }
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   t.equal(orig.value, undefined, 'orig correct start state')
   t.equal(copy.value, undefined, 'copy correct start state')
@@ -71,7 +72,7 @@ test('basic - method this', (t) => {
 
 test('basic - delete and "in" keyword', (t) => {
   const orig = {}
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   // copy doesnt affect orig
   t.equal('xyz' in orig, false, 'orig doesnt have xyz property')
@@ -110,7 +111,7 @@ test('basic - delete and "in" keyword', (t) => {
 test('basic - ref matching', (t) => {
   const child = {}
   const orig = { a: child, b: child }
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   t.equal(orig.a, orig.b, 'orig refs match')
   t.equal(copy.a, copy.b, 'copy refs match')
@@ -122,7 +123,7 @@ test('basic - ref matching', (t) => {
 test('basic - circ refs', (t) => {
   const orig = {}
   orig.self = orig
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   t.equal(orig.self, orig, 'orig circ refs match')
   t.equal(copy.self, copy, 'copy circ refs match')
@@ -133,7 +134,7 @@ test('basic - circ refs', (t) => {
 
 test('propertyDescriptors - getOwnPropertyDescriptor', (t) => {
   const orig = { child: {} }
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   const copyChildProp = Object.getOwnPropertyDescriptor(copy, 'child')
 
@@ -147,7 +148,7 @@ test('propertyDescriptors - getOwnPropertyDescriptor', (t) => {
 
 test('propertyDescriptors - defineProperty', (t) => {
   const orig = {}
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   const config = {
     value: 42,
@@ -169,7 +170,7 @@ test('propertyDescriptors - defineProperty', (t) => {
 
 test('propertyDescriptors - getter on original', (t) => {
   const orig = {}
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   const correctValue = { isCorrect: true }
   let calledGetter = 0
@@ -193,7 +194,7 @@ test('propertyDescriptors - getter on original', (t) => {
 
 test('propertyDescriptors - getter that re-defines itself on original', (t) => {
   const orig = {}
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   Object.defineProperty(orig, 'xyz', {
     get () {
@@ -217,7 +218,7 @@ test('propertyDescriptors - getter that re-defines itself on original', (t) => {
 
 test('propertyDescriptors - setter on original', (t) => {
   const orig = {}
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   Object.defineProperty(orig, 'xyz', {
     set () {
@@ -239,7 +240,7 @@ test('propertyDescriptors - setter on original', (t) => {
 
 test('propertyDescriptors - non configurable property', (t) => {
   const orig = {}
-  const copy = createCopy(orig)
+  const copy = createCopyFactory()(orig)
 
   Object.defineProperty(orig, 'abc', {
     value: 123,
@@ -262,7 +263,7 @@ test('propertyDescriptors - non configurable property', (t) => {
 })
 
 test('prototype - sanity checks', (t) => {
-  const copy = createCopy({})
+  const copy = createCopyFactory()({})
   t.notOk(copy.prototype, 'copy.prototype')
   t.ok(Reflect.getPrototypeOf(copy), 'copy has prototype')
   t.notOk(Reflect.getPrototypeOf(Reflect.getPrototypeOf(copy)), 'copy prototype has no prototype')
@@ -277,7 +278,7 @@ test('class - function class', (t) => {
   }
   Orig.prototype.a = function () { this.b = 456 }
   
-  const Copy = createCopy(Orig)
+  const Copy = createCopyFactory()(Orig)
   Copy.prototype.a = function () { this.b = 789 }
   
   function Child () { Copy.call(this) }
@@ -326,7 +327,7 @@ test('class - class syntax', (t) => {
       this.b = 456
     }
   }
-  const Copy = createCopy(Original)
+  const Copy = createCopyFactory()(Original)
   const copy = new Copy()
 
   t.equal(Reflect.getPrototypeOf(copy), Copy.prototype, 'prototype matches')
@@ -348,7 +349,7 @@ test('class - class syntax subclass minimal', (t) => {
   class Original {}
   Original.prototype.label = 'original'
 
-  const Copy = createCopy(Original)
+  const Copy = createCopyFactory()(Original)
   Copy.prototype.label = 'copy'
 
   console.warn('>>> extend')
@@ -392,7 +393,7 @@ test('class - class syntax subclass', (t) => {
   }
   Orig.prototype.label = 'orig'
 
-  const Copy = createCopy(Orig)
+  const Copy = createCopyFactory()(Orig)
   Copy.prototype.label = 'copy'
 
   console.warn('>>> extend')
