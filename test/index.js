@@ -96,14 +96,12 @@ test('basic - delete and "in" keyword', (t) => {
   t.equal('xyz' in orig, false, 'orig still doesnt have xyz property')
   t.equal('xyz' in copy, false, 'copy no longer has xyz property')
   t.notOk(Object.getOwnPropertyDescriptor(copy, 'xyz'), 'has no property descriptor for xyz')
-  console.warn(Object.getOwnPropertyDescriptor(copy, 'xyz'))
 
   // set again
   copy.xyz = 789
   t.equal('xyz' in orig, false, 'orig still doesnt have xyz property')
   t.equal('xyz' in copy, true, 'copy now has xyz property')
   t.ok(Object.getOwnPropertyDescriptor(copy, 'xyz'), 'has property descriptor for xyz')
-  console.warn(Object.getOwnPropertyDescriptor(copy, 'xyz'))
 
   t.end()
 })
@@ -272,10 +270,7 @@ test('prototype - sanity checks', (t) => {
 })
 
 test('class - function class', (t) => {
-  function Orig () {
-    this.b = 123
-    console.log('ctor', this.constructor.name)
-  }
+  function Orig () { this.b = 123 }
   Orig.prototype.a = function () { this.b = 456 }
   
   const Copy = createCopyFactory()(Orig)
@@ -285,14 +280,8 @@ test('class - function class', (t) => {
   Child.prototype = Object.create(Copy.prototype)
 
   const orig = new Orig()
-  console.warn('copy inst start')
   const copy = new Copy()
-  console.warn('copy inst end')
   const child = new Child()
-
-  console.warn('orig props', Object.getOwnPropertyDescriptors(orig))
-  console.warn('copy props', Object.getOwnPropertyDescriptors(copy))
-  console.warn('child props', Object.getOwnPropertyDescriptors(child))
 
   t.equal(orig.b, 123, 'orig should have expected start state')
   t.equal(copy.b, 123, 'copy should have expected start state')
@@ -352,28 +341,16 @@ test('class - class syntax subclass minimal', (t) => {
   const Copy = createCopyFactory()(Original)
   Copy.prototype.label = 'copy'
 
-  console.warn('>>> extend')
   class NewClass extends Copy {}
-  console.warn('<<< extend')
   NewClass.prototype.label = 'new'
 
-  console.warn('---- construct start')
   const inst = new NewClass()
-  console.warn('---- construct end')
 
-  console.warn('---- get proto start')
   const instProto = Reflect.getPrototypeOf(inst)
-  console.warn('---- get proto end')
   
-  console.warn('---- log start')
-  console.warn(instProto)
-  console.warn('---- log end')
-
-  console.warn('---- test start')
   t.equal(instProto, NewClass.prototype, 'prototype of inst is NewClass prototype')
   t.notEqual(instProto, Copy.prototype, 'Copy prototype is NOT inst proto')
   t.notEqual(instProto, Original.prototype, 'Original prototype is NOT inst proto')
-  console.warn('---- test end')
 
   t.end()
 })
@@ -385,9 +362,6 @@ test('class - class syntax subclass', (t) => {
       this.b = 123
     }
     a () {
-      console.warn('orig a >>>')
-      console.warn('orig a this', this, this.b)
-      console.warn('orig a <<<')
       this.b = 456
     }
   }
@@ -396,13 +370,11 @@ test('class - class syntax subclass', (t) => {
   const Copy = createCopyFactory()(Orig)
   Copy.prototype.label = 'copy'
 
-  console.warn('>>> extend')
   class NewClass extends Copy {
     a () {
       this.b = 789
     }
   }
-  console.warn('<<< extend')
   NewClass.prototype.label = 'new'
 
 
@@ -417,16 +389,11 @@ test('class - class syntax subclass', (t) => {
   t.notEqual(Copy.prototype, Orig.prototype, 'Copy prototype does not match Orig prototype')
   t.notEqual(NewClass.prototype, Copy.prototype, 'NewClass prototype does not match Copy prototype')
   
-  console.warn('---- test start')
   const instProto = Reflect.getPrototypeOf(inst)
-  console.log(instProto)
   t.equal(instProto, NewClass.prototype, 'prototype of inst is NewClass prototype')
-  console.warn('---- test end')
   
   t.equal(inst.b, 123, 'prop is as set in constructor')
-  console.warn('a >>>')
   inst.a()
-  console.warn('a <<<')
   t.equal(inst.b, 789, 'prop is set again by fn call')
 
   Orig.prototype.abc = 123

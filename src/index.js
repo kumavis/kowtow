@@ -13,7 +13,7 @@ function createCopyFactory() {
     if (!shouldCopy(target)) return target
     // reuse existing copies
     if (originalToProxy.has(target)) {
-      console.warn(`*** copy reused ${debugLabel}`)
+      // console.warn(`*** copy reused ${debugLabel}`)
       return originalToProxy.get(target)
     }
     // prepare a proxy
@@ -22,7 +22,7 @@ function createCopyFactory() {
 
     global.copyCount = global.copyCount || 0
     global.copyCount++
-    console.warn(`+++ copy new #${global.copyCount} - ${debugLabel}`)
+    // console.warn(`+++ copy new #${global.copyCount} - ${debugLabel}`)
 
     // const readOnlyProps = Object.getOwnPropertyDescriptors(target).map(propIsReadOnly)
     //
@@ -35,7 +35,7 @@ function createCopyFactory() {
     const proxyHandlers = {
       get (_, key) {
         const keyString = String(key)
-        console.warn('$$$ get', debugLabel, keyString)
+        // console.warn('$$$ get', debugLabel, keyString)
         // read from overrides
         if (writes.has(key)) {
           return writes.get(key).value
@@ -45,14 +45,14 @@ function createCopyFactory() {
         return createCopy(value, `${debugLabel}.${keyString}`)
       },
       set (_, key, value, receiver) {
-        console.warn('$$$ set', debugLabel, key, !!receiver)
+        // console.warn('$$$ set', debugLabel, key, !!receiver)
         
         // check property descriptors for setter
         const targetPropDesc = proxyHandlers.getOwnPropertyDescriptor(_, key)
         if (targetPropDesc) {
-          console.warn('~~~ target has prop desc')
+          // console.warn('~~~ target has prop desc')
           if (targetPropDesc.set) {
-            console.warn('~~~ target has setter for prop')
+            // console.warn('~~~ target has setter for prop')
           }
         }
         if (targetPropDesc && targetPropDesc.set) {
@@ -60,15 +60,15 @@ function createCopyFactory() {
           return setter.call(receiver, value)
         }
 
-        if (!receiver) console.warn('~~~~ no receiver')
+        // if (!receiver) console.warn('~~~~ no receiver')
         if (proxyToShadows.has(receiver)) {
-          console.warn('~~~ receiver is proxy')
+          // console.warn('~~~ receiver is proxy')
         } else {
-          console.warn('~~~ receiver is NOT proxy')
+          // console.warn('~~~ receiver is NOT proxy')
           if (originalToProxy.has(receiver)) {
-            console.warn('~~~ receiver has proxy')
+            // console.warn('~~~ receiver has proxy')
           } else {
-            console.warn('~~~ receiver does NOT have proxy')
+            // console.warn('~~~ receiver does NOT have proxy')
           }
           return Reflect.set(target, key, value, receiver)
         }
@@ -85,31 +85,25 @@ function createCopyFactory() {
         return value
       },
       getPrototypeOf (_) {
-        console.warn('$$$ getPrototypeOf', debugLabel)
+        // console.warn('$$$ getPrototypeOf', debugLabel)
         const result = Reflect.getPrototypeOf(target)
-        // this is fine actual, walks proto hierarchy
-        // if (result && debugLabel.includes('prototype')) {
-        //   const result = Reflect.getPrototypeOf(target)
-        //   console.warn('double proto', target, result)
-        //   throw new Error('double proto')
-        // }
         return createCopy(result, `${debugLabel}.<prototype>`)
       },
       setPrototypeOf (_, newPrototype) {
-        console.warn('$$$ setPrototypeOf', debugLabel)
+        // console.warn('$$$ setPrototypeOf', debugLabel)
         return Reflect.setPrototypeOf(target, newPrototype)
       },
       isExtensible (_) {
-        console.warn('$$$ isExtensible', debugLabel)
+        // console.warn('$$$ isExtensible', debugLabel)
         return Reflect.isExtensible(target)
       },
       preventExtensions (_) {
-        console.warn('$$$ preventExtensions', debugLabel)
+        // console.warn('$$$ preventExtensions', debugLabel)
         return Reflect.preventExtensions(target)
       },
       getOwnPropertyDescriptor (_, key) {
         const keyString = String(key)
-        console.warn('$$$ getOwnPropertyDescriptor', debugLabel, keyString)
+        // console.warn('$$$ getOwnPropertyDescriptor', debugLabel, keyString)
         // check shadowed values
         if (deletes.has(key)) return undefined
         if (writes.has(key)) return writes.get(key)
@@ -129,7 +123,7 @@ function createCopyFactory() {
         if (!propDesc.configurable) {
           const proxyTargetPropDesc = Reflect.getOwnPropertyDescriptor(proxyTarget)
           const proxyTargetPropIsConfigurable = (!proxyTargetPropDesc || proxyTargetPropDesc.configurable)
-          console.warn('@@ getOwnPropertyDescriptor - non configurable', String(key), !!proxyTargetPropIsConfigurable)
+          // console.warn('@@ getOwnPropertyDescriptor - non configurable', String(key), !!proxyTargetPropIsConfigurable)
           // if proxy target is configurable (and real target is not) update the proxy target to ensure the invariant holds
           if (proxyTargetPropIsConfigurable) {
             Reflect.defineProperty(proxyTarget, key, propDesc)
@@ -138,7 +132,7 @@ function createCopyFactory() {
         return propDesc
       },
       defineProperty (_, key, descriptor) {
-        console.warn('$$$ defineProperty', debugLabel)
+        // console.warn('$$$ defineProperty', debugLabel)
         // check if valid to define
         const targetPropDesc = proxyHandlers.getOwnPropertyDescriptor(_, key)
         if (targetPropDesc && !targetPropDesc.configurable) {
@@ -152,7 +146,7 @@ function createCopyFactory() {
       },
       has (_, key) {
         const keyString = String(key)
-        console.warn('$$$ has', debugLabel, keyString)
+        // console.warn('$$$ has', debugLabel, keyString)
         if (writes.has(key)) {
           return true
         }
@@ -163,7 +157,7 @@ function createCopyFactory() {
       },
       deleteProperty (_, key) {
         const keyString = String(key)
-        console.warn('$$$ deleteProperty', debugLabel, keyString)
+        // console.warn('$$$ deleteProperty', debugLabel, keyString)
         // ensure its not in our writes
         writes.delete(key)
         // if proxy target has value, shadow with a delete
@@ -172,7 +166,7 @@ function createCopyFactory() {
         }
       },
       ownKeys (_) {
-        console.warn('$$$ ownKeys', debugLabel)
+        // console.warn('$$$ ownKeys', debugLabel)
         // add targets keys
         const targetKeys = Reflect.ownKeys(target)
         const keys = new Set(targetKeys)
@@ -185,11 +179,11 @@ function createCopyFactory() {
         return Array.from(keys.values())
       },
       apply (_, thisArg, argumentsList) {
-        console.warn('$$$ apply', debugLabel)
+        // console.warn('$$$ apply', debugLabel)
         return Reflect.apply(target, thisArg, argumentsList)
       },
       construct (_, args, thisArg) {
-        console.warn('$$$ construct', debugLabel, thisArg)
+        // console.warn('$$$ construct', debugLabel, thisArg)
         const inst = Reflect.construct(target, args, thisArg)
         return inst
       },
