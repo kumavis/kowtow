@@ -54,6 +54,21 @@ test('basic - deep set', (t) => {
   t.end()
 })
 
+test('basic - method this', (t) => {
+  const orig = { xyz: function () { this.value = 123 } }
+  const copy = createCopy(orig)
+
+  t.equal(orig.value, undefined, 'orig correct start state')
+  t.equal(copy.value, undefined, 'copy correct start state')
+
+  copy.xyz()
+
+  t.equal(orig.value, undefined, 'orig unmodified')
+  t.equal(copy.value, 123, 'copy correctly modified')
+
+  t.end()
+})
+
 test('basic - delete and "in" keyword', (t) => {
   const orig = {}
   const copy = createCopy(orig)
@@ -196,6 +211,27 @@ test('propertyDescriptors - getter that re-defines itself on original', (t) => {
   t.equal(copy.xyz, 1, 'returned first static value')
   t.equal(copy.xyz, 2, 'returned second static value')
   t.equal(copy.xyz, 2, 'returned second static value again')
+
+  t.end()
+})
+
+test('propertyDescriptors - setter on original', (t) => {
+  const orig = {}
+  const copy = createCopy(orig)
+
+  Object.defineProperty(orig, 'xyz', {
+    set () {
+      this.abc = 123
+    },
+  })
+
+  t.equal(orig.abc, undefined, 'orig correct start state')
+  t.equal(copy.abc, undefined, 'copy correct start state')
+
+  copy.xyz = 999
+
+  t.equal(orig.abc, undefined, 'orig unmodified')
+  t.equal(copy.abc, 123, 'copy correctly modified')
 
   t.end()
 })

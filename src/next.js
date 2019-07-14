@@ -47,6 +47,18 @@ function createCopyFactory() {
       set (_, key, value, receiver) {
         console.warn('$$$ set', debugLabel, key, !!receiver)
         
+        const targetPropDesc = proxyHandlers.getOwnPropertyDescriptor(_, key)
+        if (targetPropDesc) {
+          console.warn('~~~ target has prop desc')
+          if (targetPropDesc.set) {
+            console.warn('~~~ target has setter for prop')
+          }
+        }
+        if (targetPropDesc && targetPropDesc.set) {
+          const setter = targetPropDesc.set
+          setter.call(receiver, value)
+        }
+
         if (!receiver) console.warn('~~~~ no receiver')
         if (proxyToShadows.has(receiver)) {
           console.warn('~~~ receiver is proxy')
