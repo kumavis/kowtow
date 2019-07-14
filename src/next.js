@@ -139,16 +139,9 @@ function createCopyFactory() {
         console.warn('$$$ apply', debugLabel)
         return Reflect.apply(target, thisArg, argumentsList)
       },
-      construct (_, args) {
-        console.warn('$$$ construct', debugLabel)
-        const inst = Reflect.construct(target, args)
-        // set the prototype of to the copy of the original prototype
-        const instProto = Reflect.getPrototypeOf(inst)
-        const protoCopy = createCopy(instProto, `${debugLabel}.<!prototype>`)
-        if (protoCopy.prototype) {
-          console.warn('$$$ construct inst proto has proto')
-        }
-        Reflect.setPrototypeOf(inst, protoCopy)
+      construct (_, args, thisArg) {
+        console.warn('$$$ construct', debugLabel, thisArg)
+        const inst = Reflect.construct(target, args, thisArg)
         return inst
       },
     }
