@@ -329,6 +329,23 @@ test('prototype - sanity checks', (t) => {
   t.end()
 })
 
+test('class - for in on class', (t) => {
+  const { Buffer } = require('buffer')
+  const Copy = createCopyFactory()(Buffer)
+
+  const origKeys = Object.getOwnPropertyDescriptors(Buffer)
+  const copyKeys = Object.getOwnPropertyDescriptors(Copy)
+
+  // for (key in Copy) {
+  //   t.ok(key)
+  // }
+
+  t.deepEqual(copyKeys, origKeys, 'expect ownKeys result to match')
+
+  t.end()
+})
+
+
 test('class - function class', (t) => {
   function Orig () { this.b = 123 }
   Orig.prototype.a = function () { this.b = 456 }
