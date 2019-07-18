@@ -1,8 +1,14 @@
 const tape = require('tape')
 const createCopyFactory = require('../src/index')
 
+let testOnlyRun
+
 function test (label, testFn) {
   tape(label, (t) => {
+    if (testOnlyRun && testOnlyRun !== testFn) {
+      t.end()
+      return
+    }
     try {
       testFn(t)
     } catch (err) {
@@ -10,6 +16,11 @@ function test (label, testFn) {
       t.end()
     }
   })
+}
+
+test.only = (label, testFn) => {
+  testOnlyRun = testFn
+  test(label, testFn)
 }
 
 test('basic - plain values', (t) => {
@@ -329,18 +340,25 @@ test('prototype - sanity checks', (t) => {
   t.end()
 })
 
-test('class - for in on class', (t) => {
+test('traps - ownKeys', (t) => {
   const { Buffer } = require('buffer')
   const Copy = createCopyFactory()(Buffer)
 
-  const origKeys = Object.getOwnPropertyDescriptors(Buffer)
-  const copyKeys = Object.getOwnPropertyDescriptors(Copy)
-
-  // for (key in Copy) {
-  //   t.ok(key)
-  // }
+  const origKeys = Reflect.ownKeys(Buffer)
+  const copyKeys = Reflect.ownKeys(Copy)
 
   t.deepEqual(copyKeys, origKeys, 'expect ownKeys result to match')
+
+  t.end()
+})
+
+test('traps - for in', (t) => {
+  const { Buffer } = require('buffer')
+  const Copy = createCopyFactory()(Buffer)
+
+  for (key in Copy) {
+    t.ok(key)
+  }
 
   t.end()
 })
