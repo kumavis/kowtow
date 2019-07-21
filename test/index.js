@@ -12,6 +12,7 @@ function test (label, testFn) {
     try {
       testFn(t)
     } catch (err) {
+      console.warn(err)
       t.fail(err.stack)
       t.end()
     }
@@ -211,6 +212,36 @@ test('propertyDescriptors - getOwnPropertyDescriptor', (t) => {
   t.notEqual(orig.child, copyChildProp.value, 'not equal using getOwnPropertyDescriptor')
   t.equal(copy.child, copyChildProp.value, 'dot syntax returns same as getOwnPropertyDescriptor')
   t.deepEqual(orig, copy, 'copy structure matches orig')
+
+  t.end()
+})
+
+test('propertyDescriptors - getOwnPropertyDescriptors', (t) => {
+  const { Buffer } = require('buffer')
+  const Copy = createCopyFactory()(Buffer)
+
+  const origDecs = Object.getOwnPropertyDescriptors(Buffer)
+  const copyDecs = Object.getOwnPropertyDescriptors(Copy)
+
+  t.deepEqual(Object.keys(copyDecs), Object.keys(origDecs), 'getOwnPropertyDescriptors keys match')
+
+  for (let key of Object.keys(origDecs)) {
+    const origProp = origDecs[key]
+    const copyProp = copyDecs[key]
+    if ('value' in origProp) {
+      t.equal(typeof copyProp.value, typeof origProp.value, `types match for prop value ${key}`)
+      delete copyProp.value
+      delete origProp.value
+    }
+    t.deepEqual(copyProp, origProp, `expected prop to match for key ${key}`)
+  }
+
+  // work around for object-inspect and Buffer
+  // calling get on TypedArray.prototype.length throws error
+  delete origDecs.prototype
+  delete copyDecs.prototype
+
+  t.deepEqual(copyDecs, origDecs, 'expect ownKeys result to match')
 
   t.end()
 })
