@@ -35,9 +35,17 @@ function createCopyFactory() {
     // e.g.: Proxy invariant #1
     // https://www.ecma-international.org/ecma-262/8.0/#sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver
     // TypeError: 'get' on proxy: property 'prototype' is a read-only and non-configurable data property on the proxy target but the proxy did not return its actual value (expected '#<Original>' but got '[object Object]')
-    const proxyTarget = typeof target === 'function' ? function(){} : {}
+    // we use an arrow function bc it doesnt have a prototype
+    // const proxyTarget = typeof target === 'function' ? () => {} : {}
+    let proxyTarget
+    if (typeof target === 'function') {
+      proxyTarget = target.prototype ? function(){} : ()=>{}
+    } else {
+      proxyTarget = Object.create(null)
+    }
+
     const proxyHandlers = {
-      get (_, key) {
+      get (_, key, receiver) {
         const keyString = String(key)
         // console.warn('$$$ get', debugLabel, keyString)
         // read from overrides
@@ -45,7 +53,7 @@ function createCopyFactory() {
           return writes.get(key).value
         }
         // read from proxy target
-        const value = Reflect.get(target, key)
+        const value = Reflect.get(target, key, receiver)
         return createCopy(value, `${debugLabel}.${keyString}`)
       },
       set (_, key, value, receiver) {
@@ -178,7 +186,7 @@ function createCopyFactory() {
         for (let key of writes.keys()) keys.add(key)
         // remove deleted keys
         for (let key of deletes.keys()) keys.delete(key)
-        // console.warn('$$$ ownKeys', Array.from(keys).length, keys)
+        // console.warn('$$$ ownKeys', Array.from(keys).length, keys, typeof proxyTarget)
         // tape's t.deepEqual needs this to be an array (?)
         return Array.from(keys.values())
       },

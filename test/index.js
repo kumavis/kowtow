@@ -1,15 +1,27 @@
 const tape = require('tape')
 const createCopyFactory = require('../src/index')
 
+let testOnlyRun
+
 function test (label, testFn) {
   tape(label, (t) => {
+    if (testOnlyRun && testOnlyRun !== testFn) {
+      t.end()
+      return
+    }
     try {
       testFn(t)
     } catch (err) {
+      console.warn(err)
       t.fail(err.stack)
       t.end()
     }
   })
+}
+
+test.only = (label, testFn) => {
+  testOnlyRun = testFn
+  test(label, testFn)
 }
 
 test('basic - plain values', (t) => {
@@ -204,6 +216,36 @@ test('propertyDescriptors - getOwnPropertyDescriptor', (t) => {
   t.end()
 })
 
+test('propertyDescriptors - getOwnPropertyDescriptors', (t) => {
+  const { Buffer } = require('buffer')
+  const Copy = createCopyFactory()(Buffer)
+
+  const origDecs = Object.getOwnPropertyDescriptors(Buffer)
+  const copyDecs = Object.getOwnPropertyDescriptors(Copy)
+
+  t.deepEqual(Object.keys(copyDecs), Object.keys(origDecs), 'getOwnPropertyDescriptors keys match')
+
+  for (let key of Object.keys(origDecs)) {
+    const origProp = origDecs[key]
+    const copyProp = copyDecs[key]
+    if ('value' in origProp) {
+      t.equal(typeof copyProp.value, typeof origProp.value, `types match for prop value ${key}`)
+      delete copyProp.value
+      delete origProp.value
+    }
+    t.deepEqual(copyProp, origProp, `expected prop to match for key ${key}`)
+  }
+
+  // work around for object-inspect and Buffer
+  // calling get on TypedArray.prototype.length throws error
+  delete origDecs.prototype
+  delete copyDecs.prototype
+
+  t.deepEqual(copyDecs, origDecs, 'expect ownKeys result to match')
+
+  t.end()
+})
+
 test('propertyDescriptors - defineProperty', (t) => {
   const orig = {}
   const copy = createCopyFactory()(orig)
@@ -328,6 +370,30 @@ test('prototype - sanity checks', (t) => {
   
   t.end()
 })
+
+test('traps - ownKeys', (t) => {
+  const { Buffer } = require('buffer')
+  const Copy = createCopyFactory()(Buffer)
+
+  const origKeys = Reflect.ownKeys(Buffer)
+  const copyKeys = Reflect.ownKeys(Copy)
+
+  t.deepEqual(copyKeys, origKeys, 'expect ownKeys result to match')
+
+  t.end()
+})
+
+test('traps - for in', (t) => {
+  const { Buffer } = require('buffer')
+  const Copy = createCopyFactory()(Buffer)
+
+  for (key in Copy) {
+    t.ok(key)
+  }
+
+  t.end()
+})
+
 
 test('class - function class', (t) => {
   function Orig () { this.b = 123 }
