@@ -1,29 +1,17 @@
-workflow "Build, Test, and Publish" {
+workflow "Test my code" {
   on = "push"
-  resolves = ["Publish"]
+  resolves = ["npm test"]
 }
 
-action "Build" {
-  uses = "actions/npm@master"
-  args = "install"
+action "npm ci" {
+  uses = "docker://node:alpine"
+  runs = "npm"
+  args = "ci"
 }
 
-action "Test" {
-  needs = "Build"
-  uses = "actions/npm@master"
+action "npm test" {
+  needs = "npm ci"
+  uses = "docker://node:alpine"
+  runs = "npm"
   args = "test"
-}
-
-# Filter for a new tag
-action "Tag" {
-  needs = "Test"
-  uses = "actions/bin/filter@master"
-  args = "tag"
-}
-
-action "Publish" {
-  needs = "Tag"
-  uses = "actions/npm@master"
-  args = "publish --access public"
-  secrets = ["NPM_AUTH_TOKEN"]
 }
