@@ -45,7 +45,7 @@ function createCopyFactory() {
     }
 
     const proxyHandlers = {
-      get (_, key) {
+      get (_, key, receiver) {
         const keyString = String(key)
         // console.warn('$$$ get', debugLabel, keyString)
         // read from overrides
@@ -53,7 +53,7 @@ function createCopyFactory() {
           return writes.get(key).value
         }
         // read from proxy target
-        const value = Reflect.get(target, key)
+        const value = Reflect.get(target, key, receiver)
         return createCopy(value, `${debugLabel}.${keyString}`)
       },
       set (_, key, value, receiver) {
