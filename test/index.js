@@ -25,24 +25,24 @@ test.only = (label, testFn) => {
 }
 
 test('basic - plain values', (t) => {
-  const createCopy = createCopyFactory()
+  const { createCopy } = createCopyFactory()
   t.equal(createCopy(null), null, 'copy of null')
   t.equal(createCopy(undefined), undefined, 'copy of undefined')
   t.equal(createCopy(1), 1, 'copy of number')
-  
+
   t.end()
 })
 
 test('basic - get and set', (t) => {
   const orig = {}
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   // copy doesnt affect orig
   t.equal(orig.xyz, undefined, 'orig doesnt have xyz property')
   copy.xyz = 456
   t.equal(copy.xyz, 456, 'copy gets xyz assigned')
   t.equal(orig.xyz, undefined, 'orig does not get xyz assigned')
-  
+
   // orig late set
   t.equal(copy.abc, undefined, 'copy does not have abc')
   orig.abc = 123
@@ -54,7 +54,7 @@ test('basic - get and set', (t) => {
 
 test('basic - deep set', (t) => {
   const orig = { child: {} }
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   copy.child.abc = 123
 
@@ -69,7 +69,7 @@ test('basic - deep set', (t) => {
 
 test('basic - method this', (t) => {
   const orig = { xyz: function () { this.value = 123 } }
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   t.equal(orig.value, undefined, 'orig correct start state')
   t.equal(copy.value, undefined, 'copy correct start state')
@@ -88,7 +88,7 @@ test('basic - method return wrapped', (t) => {
     abc: function () { return this },
     xyz: function () { return this.child },
   }
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   t.equal(copy.abc(), copy, 'copy returns self without additional wrapper')
   t.equal(copy.xyz(), copy.child, 'copy returns wrapped child')
@@ -97,36 +97,36 @@ test('basic - method return wrapped', (t) => {
 })
 
 test('basic - function return wrapped self', (t) => {
-  const orig = function () { return orig } 
-  const copy = createCopyFactory()(orig)
+  const orig = function () { return orig }
+  const copy = createCopyFactory().createCopy(orig)
 
   t.equal(copy(), copy, 'copy returns self without additional wrapper')
-  
+
   t.end()
 })
 
 test('basic - function return wrapped obj', (t) => {
-  const createCopy = createCopyFactory()
+  const { createCopy } = createCopyFactory()
   const child = {}
-  const orig = function () { return child } 
+  const orig = function () { return child }
   const copy = createCopy(orig)
 
   t.notEqual(copy(), child, 'copy does not return unwrapped obj')
   t.equal(copy(), createCopy(child), 'copy returns clone of child')
-  
+
   t.end()
 })
 
 test('basic - delete and "in" keyword', (t) => {
   const orig = {}
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   // copy doesnt affect orig
   t.equal('xyz' in orig, false, 'orig doesnt have xyz property')
   copy.xyz = 456
   t.equal('xyz' in copy, true, 'copy gets xyz property')
   t.equal('xyz' in orig, false, 'orig does not get xyz property')
-  
+
   // orig late set
   t.equal('abc' in orig, false, 'orig does not have abc')
   t.equal('abc' in copy, false, 'copy does not have abc')
@@ -156,7 +156,7 @@ test('basic - delete and "in" keyword', (t) => {
 test('basic - ref matching', (t) => {
   const child = {}
   const orig = { a: child, b: child }
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   t.equal(orig.a, orig.b, 'orig refs match')
   t.equal(copy.a, copy.b, 'copy refs match')
@@ -168,7 +168,7 @@ test('basic - ref matching', (t) => {
 test('basic - circ refs', (t) => {
   const orig = {}
   orig.self = orig
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   t.equal(orig.self, orig, 'orig circ refs match')
   t.equal(copy.self, copy, 'copy circ refs match')
@@ -178,7 +178,7 @@ test('basic - circ refs', (t) => {
 })
 
 test('createCopyFactory - identity in spaces', (t) => {
-  const createCopyA = createCopyFactory()
+  const createCopyA = createCopyFactory().createCopy
 
   const orig = {}
   orig.self = orig
@@ -193,7 +193,7 @@ test('createCopyFactory - identity in spaces', (t) => {
   t.equal(createCopyA(orig), copy)
   t.equal(createCopyA(copy), copy)
 
-  const createCopyB = createCopyFactory()
+  const createCopyB = createCopyFactory().createCopy
 
   t.notEqual(createCopyA(orig), createCopyB(orig))
   t.notEqual(createCopyB(orig), copy)
@@ -204,7 +204,7 @@ test('createCopyFactory - identity in spaces', (t) => {
 
 test('propertyDescriptors - getOwnPropertyDescriptor', (t) => {
   const orig = { child: {} }
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   const copyChildProp = Object.getOwnPropertyDescriptor(copy, 'child')
 
@@ -218,7 +218,7 @@ test('propertyDescriptors - getOwnPropertyDescriptor', (t) => {
 
 test('propertyDescriptors - getOwnPropertyDescriptors', (t) => {
   const { Buffer } = require('buffer')
-  const Copy = createCopyFactory()(Buffer)
+  const Copy = createCopyFactory().createCopy(Buffer)
 
   const origDecs = Object.getOwnPropertyDescriptors(Buffer)
   const copyDecs = Object.getOwnPropertyDescriptors(Copy)
@@ -248,14 +248,14 @@ test('propertyDescriptors - getOwnPropertyDescriptors', (t) => {
 
 test('propertyDescriptors - defineProperty', (t) => {
   const orig = {}
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   const config = {
     value: 42,
     writable: true,
     enumerable: true,
     configurable: true,
-  }  
+  }
 
   Object.defineProperty(copy, 'a', config)
 
@@ -270,7 +270,7 @@ test('propertyDescriptors - defineProperty', (t) => {
 
 test('propertyDescriptors - getter on original', (t) => {
   const orig = {}
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   const correctValue = { isCorrect: true }
   let calledGetter = 0
@@ -294,7 +294,7 @@ test('propertyDescriptors - getter on original', (t) => {
 
 test('propertyDescriptors - getter that re-defines itself on original', (t) => {
   const orig = {}
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   Object.defineProperty(orig, 'xyz', {
     get () {
@@ -318,7 +318,7 @@ test('propertyDescriptors - getter that re-defines itself on original', (t) => {
 
 test('propertyDescriptors - setter on original', (t) => {
   const orig = {}
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   Object.defineProperty(orig, 'xyz', {
     set () {
@@ -340,7 +340,7 @@ test('propertyDescriptors - setter on original', (t) => {
 
 test('propertyDescriptors - non configurable property', (t) => {
   const orig = {}
-  const copy = createCopyFactory()(orig)
+  const copy = createCopyFactory().createCopy(orig)
 
   Object.defineProperty(orig, 'abc', {
     value: 123,
@@ -363,17 +363,17 @@ test('propertyDescriptors - non configurable property', (t) => {
 })
 
 test('prototype - sanity checks', (t) => {
-  const copy = createCopyFactory()({})
+  const copy = createCopyFactory().createCopy({})
   t.notOk(copy.prototype, 'copy.prototype')
   t.ok(Reflect.getPrototypeOf(copy), 'copy has prototype')
   t.notOk(Reflect.getPrototypeOf(Reflect.getPrototypeOf(copy)), 'copy prototype has no prototype')
-  
+
   t.end()
 })
 
 test('traps - ownKeys', (t) => {
   const { Buffer } = require('buffer')
-  const Copy = createCopyFactory()(Buffer)
+  const Copy = createCopyFactory().createCopy(Buffer)
 
   const origKeys = Reflect.ownKeys(Buffer)
   const copyKeys = Reflect.ownKeys(Copy)
@@ -385,7 +385,7 @@ test('traps - ownKeys', (t) => {
 
 test('traps - for in', (t) => {
   const { Buffer } = require('buffer')
-  const Copy = createCopyFactory()(Buffer)
+  const Copy = createCopyFactory().createCopy(Buffer)
 
   for (key in Copy) {
     t.ok(key)
@@ -398,10 +398,10 @@ test('traps - for in', (t) => {
 test('class - function class', (t) => {
   function Orig () { this.b = 123 }
   Orig.prototype.a = function () { this.b = 456 }
-  
-  const Copy = createCopyFactory()(Orig)
+
+  const Copy = createCopyFactory().createCopy(Orig)
   Copy.prototype.a = function () { this.b = 789 }
-  
+
   function Child () { Copy.call(this) }
   Child.prototype = Object.create(Copy.prototype)
 
@@ -420,7 +420,7 @@ test('class - function class', (t) => {
   t.equal(copy.b, 123, 'copy as a seperate instance shouldnt be changed')
   copy.a()
   t.equal(copy.b, 789, 'copy uses new method for "a"')
-  
+
   t.equal(orig.b, 123, 'orig as a separate instance shouldnt be changed')
   orig.a()
   t.equal(orig.b, 456, 'orig should be unmodified')
@@ -442,14 +442,14 @@ test('class - class syntax', (t) => {
       this.b = 456
     }
   }
-  const Copy = createCopyFactory()(Original)
+  const Copy = createCopyFactory().createCopy(Original)
   const copy = new Copy()
 
   t.equal(Reflect.getPrototypeOf(copy), Copy.prototype, 'prototype matches')
   t.equal(copy.b, 123)
-  
+
   copy.a()
-  
+
   t.equal(copy.b, 456)
 
   Original.prototype.a = function () { this.b = 789 }
@@ -464,7 +464,7 @@ test('class - class syntax subclass minimal', (t) => {
   class Original {}
   Original.prototype.label = 'original'
 
-  const Copy = createCopyFactory()(Original)
+  const Copy = createCopyFactory().createCopy(Original)
   Copy.prototype.label = 'copy'
 
   class NewClass extends Copy {}
@@ -473,7 +473,7 @@ test('class - class syntax subclass minimal', (t) => {
   const inst = new NewClass()
 
   const instProto = Reflect.getPrototypeOf(inst)
-  
+
   t.equal(instProto, NewClass.prototype, 'prototype of inst is NewClass prototype')
   t.notEqual(instProto, Copy.prototype, 'Copy prototype is NOT inst proto')
   t.notEqual(instProto, Original.prototype, 'Original prototype is NOT inst proto')
@@ -493,7 +493,7 @@ test('class - class syntax subclass', (t) => {
   }
   Orig.prototype.label = 'orig'
 
-  const Copy = createCopyFactory()(Orig)
+  const Copy = createCopyFactory().createCopy(Orig)
   Copy.prototype.label = 'copy'
 
   class NewClass extends Copy {
@@ -514,10 +514,10 @@ test('class - class syntax subclass', (t) => {
   t.equal(NewClass.prototype.label, 'new', 'NewClass proto has label set')
   t.notEqual(Copy.prototype, Orig.prototype, 'Copy prototype does not match Orig prototype')
   t.notEqual(NewClass.prototype, Copy.prototype, 'NewClass prototype does not match Copy prototype')
-  
+
   const instProto = Reflect.getPrototypeOf(inst)
   t.equal(instProto, NewClass.prototype, 'prototype of inst is NewClass prototype')
-  
+
   t.equal(inst.b, 123, 'prop is as set in constructor')
   inst.a()
   t.equal(inst.b, 789, 'prop is set again by fn call')
@@ -544,7 +544,7 @@ test('class - class syntax subclass readme example', (t) => {
     xyz () { return 456 }
   }
   // copy of base class with shadowed prototype
-  const B = createCopyFactory()(A)
+  const B = createCopyFactory().createCopy(A)
   B.prototype.abc = function () { return this.xyz() }
   // child class
   class C extends B {
@@ -558,6 +558,38 @@ test('class - class syntax subclass readme example', (t) => {
   t.equal(a.abc(), 123)
   t.equal(b.abc(), 456)
   t.equal(c.abc(), 789)
+
+  t.end()
+})
+
+test('unwrap - pseudo DOM element', (t) => {
+  const domSpace = createCopyFactory()
+  const moduleSpace = createCopyFactory()
+
+  // DOM-like api. real element objects must be used with dom apis
+  const newElement = {}
+  const document = {
+    createElement: () => {
+      return newElement
+    }
+  }
+  const body = {
+    appendChild: (element) => {
+      if (element !== newElement) throw Error('element was wrapped')
+    }
+  }
+
+  // wrap DOM apis
+  const window = domSpace.createCopy({ document, body })
+
+  // wrap module abstracting element creation
+  const createComponent = moduleSpace.createCopy(() => {
+    return window.document.createElement('div')
+  })
+
+  // use two spaces together
+  const element = createComponent()
+  window.body.appendChild(element)
 
   t.end()
 })

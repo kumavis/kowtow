@@ -6,8 +6,8 @@ function createCopyFactory() {
   const originalToProxy = new WeakMap()
   const proxyToShadows = new WeakMap()
 
-  return createCopy
-  
+  return { createCopy, originalToProxy, proxyToShadows }
+
   function createCopy (target, debugLabel = '<root>') {
     // return original target if proxy is not possible
     if (!shouldCopy(target)) return target
@@ -58,7 +58,7 @@ function createCopyFactory() {
       },
       set (_, key, value, receiver) {
         // console.warn('$$$ set', debugLabel, key, !!receiver)
-        
+
         // check property descriptors for setter
         const targetPropDesc = proxyHandlers.getOwnPropertyDescriptor(_, key)
         if (targetPropDesc) {
@@ -121,7 +121,7 @@ function createCopyFactory() {
         if (writes.has(key)) return writes.get(key)
         // look up on target and copy value
         const propDesc = Reflect.getOwnPropertyDescriptor(target, key)
-  
+
         // if no property found, return
         if (!propDesc) return
 
@@ -193,7 +193,7 @@ function createCopyFactory() {
       apply (_, thisArg, argumentsList) {
         // console.warn('$$$ apply', debugLabel)
         const result = Reflect.apply(target, thisArg, argumentsList)
-        return createCopy(result, `${debugLabel}.<apply>`) 
+        return createCopy(result, `${debugLabel}.<apply>`)
       },
       construct (_, args, thisArg) {
         // console.warn('$$$ construct', debugLabel, thisArg)
