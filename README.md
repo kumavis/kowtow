@@ -91,5 +91,6 @@ See tests for more examples
   - handles the case where a wrapped object is passed in to a wrapped function, by unwrapping it (not sure this is a common case)
   - supports revocation (not needed for our usecase?)
   - Does not support shadowing (local-only writes)
+    - can do this, requries configuration of "distortions"
 - [`muta`](https://github.com/mappum/muta), doesnt support classes
 - [`immer`](https://github.com/immerjs/immer), doesnt allow late modifications of original
